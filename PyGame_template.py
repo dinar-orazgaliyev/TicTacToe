@@ -1,11 +1,14 @@
 import pygame
-
+import time
+import bot_mine
+import pdb
 
 pygame.init()
 WINDOW_WIDTH = 390 
 WINDOW_HEIGHT = 390
 FPS = 30
 SCREEN = pygame.display.set_mode((WINDOW_WIDTH,WINDOW_HEIGHT))
+
 pygame.display.set_caption("Tic Tac Toe")
 clock = pygame.time.Clock()
 
@@ -18,6 +21,8 @@ GREEN = (0, 255, 0)
 BRIGHT_GREEN = (0, 200, 0)
 BLUE = (0, 0, 255)
 CYAN = (0,255,255)
+SCREEN.fill(WHITE)
+
 
 class button():
 	def __init__(self, color, x,y,width,height, text=''):
@@ -60,17 +65,16 @@ class TicTacToe():
 
 	def __init__(self,SCREEN):
 		self.SCREEN = SCREEN
-		self.board = ['#',' ',' ',' ',' ',' ',' ',' ',' ',' ']
-		self.available = [str(num) for num in range(0,10)] # a List Comprehension
+		self.board = [' ',' ',' ',' ',' ',' ',' ',' ',' ']
 		self.Players = {'X':'','O':''}
 		self.Buttons = []
 
 	def draw_grid(self,WINDOW_WIDTH,WINDOW_HEIGHT):
 		blockSize = WINDOW_HEIGHT // 3
 		#SCREEN = pygame.display.set_mode((WINDOW_WIDTH,WINDOW_HEIGHT))
-		pygame.display.flip()
+		#pygame.display.flip()
 
-		self.SCREEN.fill(BLACK)
+		#self.SCREEN.fill(BLACK)
 		for x in range(0, WINDOW_WIDTH, blockSize):
 			for y in range(0, WINDOW_HEIGHT, blockSize):
 				#rect = pygame.Rect(x, y, blockSize, blockSize)
@@ -84,28 +88,125 @@ class TicTacToe():
 
 
 	def draw_x(self,i):
-		pygame.draw.line(self.SCREEN,BLACK,[self.Buttons[i].x,self.Buttons[i].y],[self.Buttons[i].x+self.Buttons[i].width,self.Buttons[i].y+self.Buttons[i].height])
-		pygame.draw.line(self.SCREEN,BLACK,[self.Buttons[i].x,self.Buttons[i].y+self.Buttons[i].height],[self.Buttons[i].x+self.Buttons[i].width,self.Buttons[i].y])
+
+		pygame.draw.line(self.SCREEN,BLUE,[self.Buttons[i].x,self.Buttons[i].y],[self.Buttons[i].x+self.Buttons[i].width,self.Buttons[i].y+self.Buttons[i].height],2)
+		pygame.draw.line(self.SCREEN,BLUE,[self.Buttons[i].x,self.Buttons[i].y+self.Buttons[i].height],[self.Buttons[i].x+self.Buttons[i].width,self.Buttons[i].y],2)
 
 
-	def draw_circle(self):
-		pass
+	def draw_circle(self,i):
+		x = self.Buttons[i].x + 65
+		y = self.Buttons[i].y + 65
+		pygame.draw.circle(self.SCREEN,BLUE,(x,y),50,3)
+
+	def is_full(self):
+		isfull = True
+		for i in range(0,9):
+			if self.board[i] == ' ':
+				isfull = False
+		return isfull
+
+	def win_check(self, mark):
+		if (self.board[0] + self.board[1] + self.board[2] == 3*mark):
+			return True
+		elif (self.board[3] + self.board[4] + self.board[5] == 3*mark):
+			return True
+		elif (self.board[6] + self.board[7] + self.board[8] == 3*mark):
+			return True
+		elif (self.board[0] + self.board[3] + self.board[6] == 3*mark):
+			return True
+		elif (self.board[1] + self.board[4] + self.board[7] == 3*mark):
+			return True
+		elif (self.board[2] + self.board[5] + self.board[8] == 3*mark):
+			return True
+		elif (self.board[0] + self.board[4] + self.board[8] == 3*mark):
+			return True
+		elif (self.board[2] + self.board[4] + self.board[6] == 3*mark):
+			return True
+		else:
+			return False
 
 
 
 
 
 def text_objects(text, font):
-    textSurface = font.render(text, True, BLACK)
-    return textSurface, textSurface.get_rect()
+	textSurface = font.render(text, True, BLACK)
+	return textSurface, textSurface.get_rect()
+
+
+def message_display(text):
+	largeText = pygame.font.Font('freesansbold.ttf',30)
+	TextSurf, TextRect = text_objects(text, largeText)
+	TextRect.center = ((WINDOW_WIDTH/2),(WINDOW_HEIGHT/6))
+	SCREEN.fill(WHITE)
+	SCREEN.blit(TextSurf, TextRect)
+
+	pygame.display.update()
+
+	#time.sleep(2)
+
+def game_loop_single():
+	gameExit = False
+	tictactoe = TicTacToe(SCREEN)
+	tictactoe.draw_grid(WINDOW_WIDTH,WINDOW_HEIGHT)
+	bot_move = False
+	bot = bot_mine.tic_bot()
+	while not gameExit:
+		#pdb.set_trace()
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				quit_game()
+			if event.type == pygame.MOUSEBUTTONDOWN:
+				pos = pygame.mouse.get_pos()
+				for i in range(0,len(tictactoe.Buttons)):
+					if tictactoe.Buttons[i].isOver(pos) and bot_move == False:
+						if tictactoe.board[i] == ' ':
+							tictactoe.board[i]	 = 'X'
+							tictactoe.draw_x(i)
+							bot.player_move(i)
+							bot_move = True
+						if tictactoe.win_check('X') == True:
+							pygame.display.flip()
+							message_display("X has won")
+							time.sleep(1)
+							SCREEN.fill(WHITE)
+							gameExit = True
+						if bot_move == True:
+							j = bot.bot_plays()
+							#bot.printBoard()
+							tictactoe.board[j] = 'O'
+							tictactoe.draw_circle(j)
+							bot_move = False
+							#print("BOTMOVEFALSE")
+							time.sleep(2)
+							if tictactoe.win_check('O') == True:
+
+									pygame.display.flip()
+									message_display("O has won")
+									#print("CHECK")
+									time.sleep(1)
+									SCREEN.fill(WHITE)
+									gameExit = True
+
+		if tictactoe.is_full() == True:
+					message_display("Draw!")
+					time.sleep(1)
+					SCREEN.fill(WHITE)
+					gameExit = True
+
+
+
+		pygame.display.update()
+		clock.tick(60)
 
 
 def game_loop():
 	gameExit = False
-
+	tictactoe = TicTacToe(SCREEN)
+	tictactoe.draw_grid(WINDOW_WIDTH,WINDOW_HEIGHT)
+	is_X = True
 	while not gameExit:
-		tictactoe = TicTacToe(SCREEN)
-		tictactoe.draw_grid(WINDOW_WIDTH,WINDOW_HEIGHT)
+		
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				quit_game()
@@ -113,18 +214,47 @@ def game_loop():
 			if event.type == pygame.MOUSEBUTTONDOWN:
 				pos = pygame.mouse.get_pos()
 				for i in range(0,len(tictactoe.Buttons)):
-					if tictactoe.Buttons[i].isOver(pos):
-						tictactoe.draw_x(i)
-				#tictactoe.Buttons[0].isCLicked(pos,tictactoe.draw_x(0)) 
-				#tictactoe.Buttons[8].isCLicked(pos,tictactoe.draw_x(8)) 
-		
-		
-		#print(tictactoe.Buttons[0].x,tictactoe.Buttons[0].y)
-		#print(tictactoe.Buttons[0].width,tictactoe.Buttons[0].height)
+					if tictactoe.Buttons[i].isOver(pos) and is_X == True:
+						
+						if tictactoe.board[i] in ['X','O']:
+							print(tictactoe.board[i])
+							continue
+						elif tictactoe.board[i] == ' ':
+							tictactoe.board[i] = 'X'
+							tictactoe.draw_x(i)
+						is_X = False
+						if tictactoe.win_check('X') == True:
+							pygame.display.flip()
+							message_display("X has won")
+							time.sleep(1)
+							SCREEN.fill(WHITE)
+							gameExit = True
 
-		#SCREEN.fill(BLACK)
-	pygame.display.update()
-	clock.tick(15)
+
+						
+					elif tictactoe.Buttons[i].isOver(pos) and is_X == False:
+						if tictactoe.board[i] in ['X','O']:
+							continue
+						elif tictactoe.board[i] == ' ':
+							tictactoe.board[i] = 'O'
+							tictactoe.draw_circle(i)
+						is_X = True
+						if tictactoe.win_check('O') == True:
+							#pygame.display.flip()
+							message_display("O has won")
+							time.sleep(1)
+							SCREEN.fill(WHITE)
+							gameExit = True
+
+				if tictactoe.is_full() == True:
+					message_display("Draw!")
+					time.sleep(1)
+					SCREEN.fill(WHITE)
+					gameExit = True
+						
+						
+		pygame.display.update()
+		clock.tick(60)
 
 
 def quit_game():
@@ -135,14 +265,14 @@ def quit_game():
 def game_intro():
 
 	intro = True
-
+	#SCREEN.fill(WHITE)
 	while intro:
 		for event in pygame.event.get():
 			#print(event)
 			if event.type == pygame.QUIT:
 				quit_game()
 				
-		SCREEN.fill(WHITE)
+		
 		largeText = pygame.font.Font('freesansbold.ttf',30)
 		TextSurf, TextRect = text_objects("A Tic Tac Toe!!!", largeText)
 		TextRect.center = ((WINDOW_WIDTH/2),(WINDOW_HEIGHT/6))
@@ -166,7 +296,8 @@ def game_intro():
 			greenButton3.color = BRIGHT_GREEN
 			greenButton3.draw(SCREEN,(0,0,0))
 
-		greenButton.isCLicked(pos,game_loop)
+		greenButton.isCLicked(pos,game_loop_single)
+		greenButton2.isCLicked(pos,game_loop)
 		greenButton3.isCLicked(pos,quit_game)
 		pygame.display.update()
 		clock.tick(15)
